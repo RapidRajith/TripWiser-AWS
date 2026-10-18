@@ -9,11 +9,18 @@ import { TripDetailsPage } from './pages/TripDetailsPage';
 import { FavoritesPage } from './pages/FavoritesPage';
 import { SharedTripPage } from './pages/SharedTripPage';
 import { NotFoundPage } from './pages/NotFoundPage';
-
+import { CustomCursor } from './components/ui/CustomCursor';
 export const App: React.FC = () => {
   return (
     <BrowserRouter>
-      <div className="min-h-screen flex flex-col bg-[#FFFDF5] text-[#171717] selection:bg-[#D8FF3E]">
+      <CustomCursor />
+      <div 
+        className="min-h-screen flex flex-col selection:bg-[#D8FF3E]"
+        style={{
+          backgroundColor: 'var(--color-paper)',
+          color: 'var(--color-ink)',
+        }} 
+      >
         <Header />
         <main className="flex-1">
           <Routes>
