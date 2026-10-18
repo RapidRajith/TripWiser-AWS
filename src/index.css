@@ -192,3 +192,65 @@ h1, h2, h3, h4, h5, h6 {
   box-shadow: var(--shadow-hard);
   z-index: 10;
 }
+
+/* Dark Mode */
+:root[data-theme="dark"] {
+  --color-ink: #F5F5F5;
+  --color-paper: #171717;
+
+  --border-strong: 2.5px solid var(--color-ink);
+  --border-thick: 3px solid var(--color-ink);
+
+  --shadow-hard: 4px 4px 0 #000000;
+  --shadow-hard-sm: 2px 2px 0 #000000;
+  --shadow-hard-lg: 6px 6px 0 #000000;
+}
+
+:root[data-theme="dark"] body {
+  background-color: var(--color-paper);
+  color: var(--color-ink);
+}
+
+:root[data-theme="dark"] h1,
+:root[data-theme="dark"] h2,
+:root[data-theme="dark"] h3,
+:root[data-theme="dark"] h4,
+:root[data-theme="dark"] h5,
+:root[data-theme="dark"] h6 {
+  color: var(--color-ink);
+}
+
+:root[data-theme="dark"] .neo-card,
+:root[data-theme="dark"] .neo-btn-secondary,
+:root[data-theme="dark"] .neo-input {
+  background-color: #262626;
+  color: var(--color-ink);
+}
+
+:root[data-theme="dark"] .neo-input::placeholder {
+  color: #B0B0B0;
+}
+
+/* Custom animated cursor */
+.custom-cursor {
+  position: fixed;
+  z-index: 9999;
+  width: 14px;
+  height: 14px;
+  border-radius: 50%;
+  background: #D8FF3E;
+  border: 2px solid #171717;
+  box-shadow: 2px 2px 0 #171717;
+  pointer-events: none;
+  transition:
+    opacity 150ms ease,
+    transform 120ms ease;
+  will-change: left, top, transform;
+}
+
+@media (pointer: coarse), (prefers-reduced-motion: reduce) {
+  .custom-cursor {
+    display: none;
+  }
+}
+
