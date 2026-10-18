@@ -1,7 +1,14 @@
+
 import React, { useState, useEffect } from 'react';
 import { useParams, Link } from 'react-router-dom';
 import type { Trip } from '../types';
-import { getTripById, deleteTripStop, reorderTripStops, exportTripToCSV, exportTripToJSON } from '../services/trips';
+import {
+  getTripById,
+  deleteTripStop,
+  reorderTripStops,
+  exportTripToCSV,
+  exportTripToJSON,
+} from '../services/trips';
 import { StopCard } from '../components/trips/StopCard';
 import { TransitConnector } from '../components/trips/TransitConnector';
 import { PackingChecklist } from '../components/trips/PackingChecklist';
@@ -20,26 +27,37 @@ import {
   Printer,
   Plus,
   Check,
+  Copy,
   Download,
   FileSpreadsheet,
   Map as MapIcon,
-  List as ListIcon
+  List as ListIcon,
 } from 'lucide-react';
 
 export const TripDetailsPage: React.FC = () => {
   const { tripId } = useParams<{ tripId: string }>();
+
   const [trip, setTrip] = useState<Trip | null>(null);
   const [selectedDay, setSelectedDay] = useState<number | 'all'>('all');
   const [viewMode, setViewMode] = useState<'list' | 'map'>('list');
   const [isLoading, setIsLoading] = useState<boolean>(true);
   const [copiedLink, setCopiedLink] = useState<boolean>(false);
+  const [copiedItinerary, setCopiedItinerary] = useState<boolean>(false);
 
   const fetchTrip = async () => {
     if (!tripId) return;
+
     setIsLoading(true);
-    const data = await getTripById(tripId);
-    setTrip(data);
-    setIsLoading(false);
+
+    try {
+      const data = await getTripById(tripId);
+      setTrip(data);
+    } catch (error) {
+      console.error('Failed to load trip:', error);
+      setTrip(null);
+    } finally {
+      setIsLoading(false);
+    }
   };
 
   useEffect(() => {
@@ -63,7 +81,9 @@ export const TripDetailsPage: React.FC = () => {
           title="Trip Not Found"
           description="This itinerary does not exist or may have been deleted."
           actionLabel="Return to My Trips"
-          onAction={() => window.location.href = '/trips'}
+          onAction={() => {
+            window.location.href = '/trips';
+          }}
         />
       </div>
     );
@@ -71,36 +91,58 @@ export const TripDetailsPage: React.FC = () => {
 
   const allStops = trip.stops || [];
 
-  // Group stops by day
-  const daysInTrip = Array.from(new Set(allStops.map(s => s.day_number))).sort((a, b) => a - b);
-  if (daysInTrip.length === 0) daysInTrip.push(1);
+  // Group stops by day.
+  const daysInTrip = Array.from(
+    new Set(allStops.map((stop) => stop.day_number))
+  ).sort((a, b) => a - b);
 
-  const filteredStops = selectedDay === 'all'
-    ? allStops.sort((a, b) => (a.day_number - b.day_number) || (a.sort_order - b.sort_order))
-    : allStops.filter(s => s.day_number === selectedDay).sort((a, b) => a.sort_order - b.sort_order);
+  if (daysInTrip.length === 0) {
+    daysInTrip.push(1);
+  }
 
-  // Stop Reordering Handlers
-  const handleMoveStop = async (stopId: string, direction: 'up' | 'down') => {
-    const stopToMove = allStops.find(s => s.id === stopId);
+  const filteredStops =
+    selectedDay === 'all'
+      ? [...allStops].sort(
+          (a, b) =>
+            a.day_number - b.day_number || a.sort_order - b.sort_order
+        )
+      : allStops
+          .filter((stop) => stop.day_number === selectedDay)
+          .sort((a, b) => a.sort_order - b.sort_order);
+
+  // Move a stop up or down within its day.
+  const handleMoveStop = async (
+    stopId: string,
+    direction: 'up' | 'down'
+  ) => {
+    const stopToMove = allStops.find((stop) => stop.id === stopId);
     if (!stopToMove) return;
 
     const dayStops = allStops
-      .filter(s => s.day_number === stopToMove.day_number)
+      .filter((stop) => stop.day_number === stopToMove.day_number)
       .sort((a, b) => a.sort_order - b.sort_order);
 
-    const currentIndex = dayStops.findIndex(s => s.id === stopId);
+    const currentIndex = dayStops.findIndex((stop) => stop.id === stopId);
     if (currentIndex === -1) return;
 
-    const targetIndex = direction === 'up' ? currentIndex - 1 : currentIndex + 1;
+    const targetIndex =
+      direction === 'up' ? currentIndex - 1 : currentIndex + 1;
+
     if (targetIndex < 0 || targetIndex >= dayStops.length) return;
 
-    // Swap IDs
-    const newOrderedIds = [...dayStops.map(s => s.id)];
-    const temp = newOrderedIds[currentIndex];
-    newOrderedIds[currentIndex] = newOrderedIds[targetIndex];
-    newOrderedIds[targetIndex] = temp;
+    const newOrderedIds = dayStops.map((stop) => stop.id);
 
-    await reorderTripStops(trip.id, stopToMove.day_number, newOrderedIds);
+    [newOrderedIds[currentIndex], newOrderedIds[targetIndex]] = [
+      newOrderedIds[targetIndex],
+      newOrderedIds[currentIndex],
+    ];
+
+    await reorderTripStops(
+      trip.id,
+      stopToMove.day_number,
+      newOrderedIds
+    );
+
     await fetchTrip();
   };
 
@@ -109,28 +151,91 @@ export const TripDetailsPage: React.FC = () => {
     await fetchTrip();
   };
 
-  const handleShareTrip = () => {
+  // Copy the shareable trip URL.
+  const handleShareTrip = async () => {
     const sharedUrl = `${window.location.origin}/shared/${trip.id}`;
-    navigator.clipboard.writeText(sharedUrl);
-    setCopiedLink(true);
-    setTimeout(() => setCopiedLink(false), 2500);
+
+    try {
+      await navigator.clipboard.writeText(sharedUrl);
+      setCopiedLink(true);
+      window.setTimeout(() => setCopiedLink(false), 2500);
+    } catch (error) {
+      console.error('Failed to copy share link:', error);
+      window.alert('Unable to copy the share link. Please try again.');
+    }
+  };
+
+  // Copy a formatted itinerary to the clipboard.
+  const handleCopyItinerary = async () => {
+    const sortedStops = [...allStops].sort(
+      (a, b) =>
+        a.day_number - b.day_number || a.sort_order - b.sort_order
+    );
+
+    const formatDate = (date?: string | null) =>
+      date ? new Date(date).toLocaleDateString() : 'TBD';
+
+    const lines: string[] = [
+      `TRIPWISER - ${trip.title}`,
+      `Destination: ${trip.destination_label || 'Not specified'}`,
+      `Dates: ${formatDate(trip.start_date)} - ${formatDate(trip.end_date)}`,
+      '',
+    ];
+
+    if (trip.notes) {
+      lines.push(`Notes: ${trip.notes}`, '');
+    }
+
+    if (sortedStops.length === 0) {
+      lines.push('No stops have been added to this trip yet.');
+    } else {
+      let currentDay: number | null = null;
+
+      sortedStops.forEach((stop) => {
+        if (stop.day_number !== currentDay) {
+          currentDay = stop.day_number;
+          lines.push('', `DAY ${currentDay}`);
+        }
+
+        lines.push(`  ${stop.sort_order + 1}. ${stop.name}`);
+
+        if (stop.address) {
+          lines.push(`     Location: ${stop.address}`);
+        }
+      });
+    }
+
+    lines.push('', 'Created with TripWiser');
+
+    try {
+      await navigator.clipboard.writeText(lines.join('\n'));
+      setCopiedItinerary(true);
+      window.setTimeout(() => setCopiedItinerary(false), 2500);
+    } catch (error) {
+      console.error('Failed to copy itinerary:', error);
+      window.alert(
+        'Unable to copy the itinerary. Please allow clipboard access and try again.'
+      );
+    }
   };
 
   const handlePrint = () => {
     window.print();
   };
 
-  // Convert stops to Map Place format
+  // Convert stops to the format required by MapView.
   const mapPlaces = allStops
-    .filter(s => s.latitude && s.longitude)
-    .map(s => ({
-      id: s.id,
+    .filter(
+      (stop) => stop.latitude != null && stop.longitude != null
+    )
+    .map((stop) => ({
+      id: stop.id,
       provider: 'geoapify' as const,
-      name: s.name,
-      category: s.category || 'tourism',
-      address: s.address,
-      latitude: s.latitude!,
-      longitude: s.longitude!,
+      name: stop.name,
+      category: stop.category || 'tourism',
+      address: stop.address,
+      latitude: stop.latitude!,
+      longitude: stop.longitude!,
     }));
 
   return (
@@ -141,13 +246,32 @@ export const TripDetailsPage: React.FC = () => {
           to="/trips"
           className="inline-flex items-center gap-2 font-bold text-sm uppercase text-[#171717] hover:underline bg-white px-3 py-1.5 rounded-lg border-2 border-[#171717] shadow-[2px_2px_0_#171717] self-start"
         >
-          <ArrowLeft size={16} /> All Trips
+          <ArrowLeft size={16} />
+          All Trips
         </Link>
 
         {/* Action Controls */}
         <div className="flex flex-wrap items-center gap-2">
+          {/* Copy Itinerary */}
+          <button
+            type="button"
+            onClick={handleCopyItinerary}
+            className="neo-btn neo-btn-secondary neo-btn-sm"
+            title="Copy formatted itinerary to clipboard"
+          >
+            {copiedItinerary ? (
+              <Check size={14} className="text-green-600" />
+            ) : (
+              <Copy size={14} />
+            )}
+            <span>
+              {copiedItinerary ? 'Itinerary Copied!' : 'Copy Itinerary'}
+            </span>
+          </button>
+
           {/* Export to CSV */}
           <button
+            type="button"
             onClick={() => exportTripToCSV(trip)}
             className="neo-btn neo-btn-secondary neo-btn-sm"
             title="Download CSV spreadsheet"
@@ -158,24 +282,33 @@ export const TripDetailsPage: React.FC = () => {
 
           {/* Export to JSON */}
           <button
+            type="button"
             onClick={() => exportTripToJSON(trip)}
             className="neo-btn neo-btn-secondary neo-btn-sm"
-            title="Export JSON itinerary dossier"
+            title="Export JSON itinerary"
           >
             <Download size={14} />
             <span>JSON</span>
           </button>
 
+          {/* Share Trip */}
           <button
+            type="button"
             onClick={handleShareTrip}
             className="neo-btn neo-btn-secondary neo-btn-sm"
             title="Copy shareable link"
           >
-            {copiedLink ? <Check size={14} className="text-green-600" /> : <Share2 size={14} />}
+            {copiedLink ? (
+              <Check size={14} className="text-green-600" />
+            ) : (
+              <Share2 size={14} />
+            )}
             <span>{copiedLink ? 'Link Copied!' : 'Share'}</span>
           </button>
 
+          {/* Print */}
           <button
+            type="button"
             onClick={handlePrint}
             className="neo-btn neo-btn-secondary neo-btn-sm hidden sm:inline-flex"
             title="Print itinerary"
@@ -192,9 +325,11 @@ export const TripDetailsPage: React.FC = () => {
           <div className="space-y-2">
             <div className="flex items-center gap-2">
               <NeoBadge label={trip.status} variant="lemon" />
+
               {trip.destination_label && (
                 <span className="text-xs font-bold uppercase text-gray-700 flex items-center gap-1 bg-[#76D7FF]/30 px-2 py-0.5 rounded border border-[#171717]">
-                  <MapPin size={12} /> {trip.destination_label}
+                  <MapPin size={12} />
+                  {trip.destination_label}
                 </span>
               )}
             </div>
@@ -207,8 +342,13 @@ export const TripDetailsPage: React.FC = () => {
               <p className="flex items-center gap-2 text-sm text-gray-600 font-semibold">
                 <Calendar size={16} className="text-[#171717]" />
                 <span>
-                  {trip.start_date ? new Date(trip.start_date).toLocaleDateString() : 'TBD'} —{' '}
-                  {trip.end_date ? new Date(trip.end_date).toLocaleDateString() : 'TBD'}
+                  {trip.start_date
+                    ? new Date(trip.start_date).toLocaleDateString()
+                    : 'TBD'}{' '}
+                  —{' '}
+                  {trip.end_date
+                    ? new Date(trip.end_date).toLocaleDateString()
+                    : 'TBD'}
                 </span>
               </p>
             )}
@@ -229,22 +369,23 @@ export const TripDetailsPage: React.FC = () => {
         )}
       </section>
 
-      {/* Trip Passport & Verification Meter (Feature Catalogue Section 4) */}
+      {/* Trip Passport */}
       <section>
         <TripPassport trip={trip} />
       </section>
 
-      {/* Budget Summary Component */}
+      {/* Budget Summary */}
       <section>
         <BudgetSummary stops={allStops} currency={trip.currency} />
       </section>
 
-      {/* Day Tabs & View Switcher */}
+      {/* Day Tabs and View Switcher */}
       <section className="space-y-4">
         <div className="flex flex-col sm:flex-row sm:items-center justify-between gap-3 pb-3 border-b-2 border-[#171717]">
           {/* Day Tabs */}
           <div className="flex items-center gap-2 overflow-x-auto pb-1 sm:pb-0">
             <button
+              type="button"
               onClick={() => setSelectedDay('all')}
               className={`px-3.5 py-1.5 rounded-lg border-2 text-xs sm:text-sm font-extrabold uppercase transition-all cursor-pointer ${
                 selectedDay === 'all'
@@ -255,10 +396,14 @@ export const TripDetailsPage: React.FC = () => {
               All Days ({allStops.length})
             </button>
 
-            {daysInTrip.map(day => {
-              const countInDay = allStops.filter(s => s.day_number === day).length;
+            {daysInTrip.map((day) => {
+              const countInDay = allStops.filter(
+                (stop) => stop.day_number === day
+              ).length;
+
               return (
                 <button
+                  type="button"
                   key={day}
                   onClick={() => setSelectedDay(day)}
                   className={`px-3.5 py-1.5 rounded-lg border-2 text-xs sm:text-sm font-extrabold uppercase transition-all cursor-pointer ${
@@ -276,31 +421,42 @@ export const TripDetailsPage: React.FC = () => {
           {/* List vs Map Switcher */}
           <div className="inline-flex rounded-lg border-2 border-[#171717] bg-white p-0.5 shadow-[2px_2px_0_#171717] shrink-0 self-start sm:self-auto">
             <button
+              type="button"
               onClick={() => setViewMode('list')}
               className={`flex items-center gap-1 px-3 py-1 text-xs font-bold uppercase rounded transition-colors ${
-                viewMode === 'list' ? 'bg-[#171717] text-white' : 'text-gray-600'
+                viewMode === 'list'
+                  ? 'bg-[#171717] text-white'
+                  : 'text-gray-600'
               }`}
             >
-              <ListIcon size={14} /> List
+              <ListIcon size={14} />
+              List
             </button>
+
             <button
+              type="button"
               onClick={() => setViewMode('map')}
               className={`flex items-center gap-1 px-3 py-1 text-xs font-bold uppercase rounded transition-colors ${
-                viewMode === 'map' ? 'bg-[#171717] text-white' : 'text-gray-600'
+                viewMode === 'map'
+                  ? 'bg-[#171717] text-white'
+                  : 'text-gray-600'
               }`}
             >
-              <MapIcon size={14} /> Map
+              <MapIcon size={14} />
+              Map
             </button>
           </div>
         </div>
 
-        {/* Itinerary Stops View */}
+        {/* Itinerary Stops */}
         {filteredStops.length === 0 ? (
           <EmptyState
             title="No Stops on This Day"
             description="Browse places to add attractions, cafes, and activities to your itinerary."
             actionLabel="Discover Places to Add"
-            onAction={() => window.location.href = '/'}
+            onAction={() => {
+              window.location.href = '/';
+            }}
           />
         ) : viewMode === 'map' ? (
           <div className="space-y-2">
@@ -313,8 +469,9 @@ export const TripDetailsPage: React.FC = () => {
           <div className="space-y-3">
             {filteredStops.map((stop, idx) => {
               const nextStop = filteredStops[idx + 1];
-              // Only show transit connector between consecutive stops on the same day
-              const showTransit = nextStop && nextStop.day_number === stop.day_number;
+
+              const showTransit =
+                nextStop && nextStop.day_number === stop.day_number;
 
               return (
                 <React.Fragment key={stop.id}>
@@ -327,6 +484,7 @@ export const TripDetailsPage: React.FC = () => {
                     onMoveDown={() => handleMoveStop(stop.id, 'down')}
                     onDelete={() => handleDeleteStop(stop.id)}
                   />
+
                   {showTransit && (
                     <TransitConnector fromStop={stop} toStop={nextStop} />
                   )}
@@ -337,10 +495,12 @@ export const TripDetailsPage: React.FC = () => {
         )}
       </section>
 
-      {/* Feature: Weather-Smart Travel Checklist */}
+      {/* Packing Checklist */}
       <section className="pt-4">
         <PackingChecklist trip={trip} />
       </section>
     </div>
   );
 };
+
+export default TripDetailsPage;
