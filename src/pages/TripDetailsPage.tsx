@@ -5,6 +5,7 @@ import { getTripById, deleteTripStop, reorderTripStops, exportTripToCSV, exportT
 import { StopCard } from '../components/trips/StopCard';
 import { TransitConnector } from '../components/trips/TransitConnector';
 import { PackingChecklist } from '../components/trips/PackingChecklist';
+import { TripPassport } from '../components/trips/TripPassport';
 import { BudgetSummary } from '../components/trips/BudgetSummary';
 import { MapView } from '../components/places/MapView';
 import { NeoBadge } from '../components/ui/NeoBadge';
@@ -109,7 +110,8 @@ export const TripDetailsPage: React.FC = () => {
   };
 
   const handleShareTrip = () => {
-    navigator.clipboard.writeText(window.location.href);
+    const sharedUrl = `${window.location.origin}/shared/${trip.id}`;
+    navigator.clipboard.writeText(sharedUrl);
     setCopiedLink(true);
     setTimeout(() => setCopiedLink(false), 2500);
   };
@@ -225,6 +227,11 @@ export const TripDetailsPage: React.FC = () => {
             "{trip.notes}"
           </p>
         )}
+      </section>
+
+      {/* Trip Passport & Verification Meter (Feature Catalogue Section 4) */}
+      <section>
+        <TripPassport trip={trip} />
       </section>
 
       {/* Budget Summary Component */}

@@ -7,6 +7,7 @@ import { PlaceDetailsPage } from './pages/PlaceDetailsPage';
 import { TripsPage } from './pages/TripsPage';
 import { TripDetailsPage } from './pages/TripDetailsPage';
 import { FavoritesPage } from './pages/FavoritesPage';
+import { SharedTripPage } from './pages/SharedTripPage';
 import { NotFoundPage } from './pages/NotFoundPage';
 
 export const App: React.FC = () => {
@@ -20,6 +21,7 @@ export const App: React.FC = () => {
             <Route path="/places/:placeId" element={<PlaceDetailsPage />} />
             <Route path="/trips" element={<TripsPage />} />
             <Route path="/trips/:tripId" element={<TripDetailsPage />} />
+            <Route path="/shared/:tripId" element={<SharedTripPage />} />
             <Route path="/favorites" element={<FavoritesPage />} />
             <Route path="*" element={<NotFoundPage />} />
           </Routes>
@@ -29,5 +31,6 @@ export const App: React.FC = () => {
     </BrowserRouter>
   );
 };
+
 
 export default App;
