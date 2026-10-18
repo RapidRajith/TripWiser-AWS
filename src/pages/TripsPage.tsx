@@ -3,6 +3,7 @@ import type { Trip } from '../types';
 import { getTrips, deleteTrip } from '../services/trips';
 import { TripCard } from '../components/trips/TripCard';
 import { CreateTripModal } from '../components/trips/CreateTripModal';
+import { TripTemplates } from '../components/trips/TripTemplates';
 import { EmptyState } from '../components/feedback/EmptyState';
 import { NeoButton } from '../components/ui/NeoButton';
 import { Plus, Compass } from 'lucide-react';
@@ -39,7 +40,7 @@ export const TripsPage: React.FC = () => {
   };
 
   return (
-    <div className="max-w-7xl mx-auto px-4 sm:px-8 py-8 space-y-8">
+    <div className="max-w-7xl mx-auto px-4 sm:px-8 py-8 space-y-12">
       {/* Header Bar */}
       <div className="flex flex-col sm:flex-row sm:items-center justify-between gap-4 pb-6 border-b-[2.5px] border-[#171717]">
         <div>
@@ -92,6 +93,11 @@ export const TripsPage: React.FC = () => {
         </div>
       )}
 
+      {/* Curated 1-Click Expeditions Section */}
+      <section className="pt-6 border-t-2 border-[#171717]/15">
+        <TripTemplates onTemplateUsed={handleTripCreated} />
+      </section>
+
       {/* Create Trip Modal */}
       <CreateTripModal
         isOpen={showCreateModal}
@@ -101,3 +107,4 @@ export const TripsPage: React.FC = () => {
     </div>
   );
 };
+

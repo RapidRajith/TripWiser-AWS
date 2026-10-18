@@ -333,3 +333,37 @@ export function calculateTripBudget(stops: TripStop[] = []): { total: number; by
 
   return { total, byDay };
 }
+
+export function exportTripToCSV(trip: Trip): void {
+  const headers = ['Day', 'Order', 'Place Name', 'Category', 'Address', 'Estimated Cost (' + trip.currency + ')', 'Notes'];
+  const rows = (trip.stops || []).map(s => [
+    `Day ${s.day_number}`,
+    s.sort_order + 1,
+    `"${(s.name || '').replace(/"/g, '""')}"`,
+    `"${(s.category || '').replace(/"/g, '""')}"`,
+    `"${(s.address || '').replace(/"/g, '""')}"`,
+    s.estimated_cost || 0,
+    `"${(s.notes || '').replace(/"/g, '""')}"`,
+  ]);
+
+  const csvContent = [headers.join(','), ...rows.map(r => r.join(','))].join('\n');
+  const blob = new Blob([csvContent], { type: 'text/csv;charset=utf-8;' });
+  const url = URL.createObjectURL(blob);
+  const link = document.createElement('a');
+  link.setAttribute('href', url);
+  link.setAttribute('download', `TripWise-${trip.title.replace(/\s+/g, '_')}-Itinerary.csv`);
+  document.body.appendChild(link);
+  link.click();
+  document.body.removeChild(link);
+}
+
+export function exportTripToJSON(trip: Trip): void {
+  const jsonString = `data:text/json;charset=utf-8,${encodeURIComponent(JSON.stringify(trip, null, 2))}`;
+  const downloadAnchor = document.createElement('a');
+  downloadAnchor.setAttribute('href', jsonString);
+  downloadAnchor.setAttribute('download', `TripWise-${trip.title.replace(/\s+/g, '_')}.json`);
+  document.body.appendChild(downloadAnchor);
+  downloadAnchor.click();
+  downloadAnchor.remove();
+}
+

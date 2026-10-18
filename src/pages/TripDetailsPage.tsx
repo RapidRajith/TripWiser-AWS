@@ -1,8 +1,10 @@
 import React, { useState, useEffect } from 'react';
 import { useParams, Link } from 'react-router-dom';
 import type { Trip } from '../types';
-import { getTripById, deleteTripStop, reorderTripStops } from '../services/trips';
+import { getTripById, deleteTripStop, reorderTripStops, exportTripToCSV, exportTripToJSON } from '../services/trips';
 import { StopCard } from '../components/trips/StopCard';
+import { TransitConnector } from '../components/trips/TransitConnector';
+import { PackingChecklist } from '../components/trips/PackingChecklist';
 import { BudgetSummary } from '../components/trips/BudgetSummary';
 import { MapView } from '../components/places/MapView';
 import { NeoBadge } from '../components/ui/NeoBadge';
@@ -17,6 +19,8 @@ import {
   Printer,
   Plus,
   Check,
+  Download,
+  FileSpreadsheet,
   Map as MapIcon,
   List as ListIcon
 } from 'lucide-react';
@@ -130,16 +134,36 @@ export const TripDetailsPage: React.FC = () => {
   return (
     <div className="max-w-6xl mx-auto px-4 sm:px-8 py-8 space-y-8">
       {/* Top Navigation */}
-      <div className="flex items-center justify-between gap-4">
+      <div className="flex flex-col sm:flex-row sm:items-center justify-between gap-4">
         <Link
           to="/trips"
-          className="inline-flex items-center gap-2 font-bold text-sm uppercase text-[#171717] hover:underline bg-white px-3 py-1.5 rounded-lg border-2 border-[#171717] shadow-[2px_2px_0_#171717]"
+          className="inline-flex items-center gap-2 font-bold text-sm uppercase text-[#171717] hover:underline bg-white px-3 py-1.5 rounded-lg border-2 border-[#171717] shadow-[2px_2px_0_#171717] self-start"
         >
           <ArrowLeft size={16} /> All Trips
         </Link>
 
         {/* Action Controls */}
-        <div className="flex items-center gap-2">
+        <div className="flex flex-wrap items-center gap-2">
+          {/* Export to CSV */}
+          <button
+            onClick={() => exportTripToCSV(trip)}
+            className="neo-btn neo-btn-secondary neo-btn-sm"
+            title="Download CSV spreadsheet"
+          >
+            <FileSpreadsheet size={14} className="text-emerald-600" />
+            <span>CSV</span>
+          </button>
+
+          {/* Export to JSON */}
+          <button
+            onClick={() => exportTripToJSON(trip)}
+            className="neo-btn neo-btn-secondary neo-btn-sm"
+            title="Export JSON itinerary dossier"
+          >
+            <Download size={14} />
+            <span>JSON</span>
+          </button>
+
           <button
             onClick={handleShareTrip}
             className="neo-btn neo-btn-secondary neo-btn-sm"
@@ -280,20 +304,35 @@ export const TripDetailsPage: React.FC = () => {
           </div>
         ) : (
           <div className="space-y-3">
-            {filteredStops.map((stop, idx) => (
-              <StopCard
-                key={stop.id}
-                stop={stop}
-                index={idx}
-                totalInDay={filteredStops.length}
-                currency={trip.currency}
-                onMoveUp={() => handleMoveStop(stop.id, 'up')}
-                onMoveDown={() => handleMoveStop(stop.id, 'down')}
-                onDelete={() => handleDeleteStop(stop.id)}
-              />
-            ))}
+            {filteredStops.map((stop, idx) => {
+              const nextStop = filteredStops[idx + 1];
+              // Only show transit connector between consecutive stops on the same day
+              const showTransit = nextStop && nextStop.day_number === stop.day_number;
+
+              return (
+                <React.Fragment key={stop.id}>
+                  <StopCard
+                    stop={stop}
+                    index={idx}
+                    totalInDay={filteredStops.length}
+                    currency={trip.currency}
+                    onMoveUp={() => handleMoveStop(stop.id, 'up')}
+                    onMoveDown={() => handleMoveStop(stop.id, 'down')}
+                    onDelete={() => handleDeleteStop(stop.id)}
+                  />
+                  {showTransit && (
+                    <TransitConnector fromStop={stop} toStop={nextStop} />
+                  )}
+                </React.Fragment>
+              );
+            })}
           </div>
         )}
+      </section>
+
+      {/* Feature: Weather-Smart Travel Checklist */}
+      <section className="pt-4">
+        <PackingChecklist trip={trip} />
       </section>
     </div>
   );
