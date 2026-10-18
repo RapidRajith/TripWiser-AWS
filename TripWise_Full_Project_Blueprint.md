@@ -1089,6 +1089,8 @@ not enough; rotate the exposed credential.
 
 ### B. Create the Vercel deployment
 
+**Live Production URL:** [https://trip-wiser-aws.vercel.app/](https://trip-wiser-aws.vercel.app/)
+
 1.  Open https://vercel.com/ and sign in.
 2.  Import the public GitHub repository.
 3.  Select the Vite framework preset if it is not detected

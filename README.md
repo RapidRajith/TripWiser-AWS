@@ -1,7 +1,10 @@
 # 🗺️ TripWise — Smart Travel Planner
 
+🔗 **Live Deployment:** [https://trip-wiser-aws.vercel.app/](https://trip-wiser-aws.vercel.app/)
+
 > **AWS Student Builder Group, VIT Chennai — Web Development Recruitment Task**  
 > **Track:** Full-Stack Web Development  
+> **Live Demo:** [https://trip-wiser-aws.vercel.app/](https://trip-wiser-aws.vercel.app/)  
 > **Aesthetic Direction:** Editorial Neo-Brutalism  
 > **Status:** Fully Functional & Production-Ready  
 
@@ -184,6 +187,8 @@ npm run build
 ---
 
 ## 🚀 Deployment to Vercel
+
+> **Live Production URL:** [https://trip-wiser-aws.vercel.app/](https://trip-wiser-aws.vercel.app/)
 
 1. Push this repository to GitHub.
 2. In [Vercel](https://vercel.com/):
