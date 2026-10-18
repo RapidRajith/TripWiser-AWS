@@ -1,5 +1,5 @@
 import React, { useState, useEffect } from 'react';
-import type { Place, PlaceCategory } from '../types';
+import type { Place, PlaceCategory, SpellingCorrection } from '../types';
 import { searchPlaces } from '../services/places';
 import { addFavorite, removeFavorite, getFavorites } from '../services/favorites';
 import { SearchBar } from '../components/places/SearchBar';
@@ -10,7 +10,7 @@ import { AddToTripModal } from '../components/trips/AddToTripModal';
 import { PlaceCardSkeleton } from '../components/ui/LoadingSkeleton';
 import { EmptyState } from '../components/feedback/EmptyState';
 import { ErrorState } from '../components/feedback/ErrorState';
-import { Compass, ShieldCheck } from 'lucide-react';
+import { Compass, ShieldCheck, Sparkles } from 'lucide-react';
 
 export const ExplorePage: React.FC = () => {
   const [destination, setDestination] = useState<string>('Chennai');
@@ -22,6 +22,7 @@ export const ExplorePage: React.FC = () => {
   const [error, setError] = useState<string | null>(null);
   const [selectedPlaceForTrip, setSelectedPlaceForTrip] = useState<Place | null>(null);
   const [attribution, setAttribution] = useState<string>('');
+  const [spellingCorrection, setSpellingCorrection] = useState<SpellingCorrection | null>(null);
 
   // Load user favorites on mount
   useEffect(() => {
@@ -41,6 +42,7 @@ export const ExplorePage: React.FC = () => {
         if (isMounted) {
           setPlaces(res.places);
           setAttribution(res.attribution);
+          setSpellingCorrection(res.correction || null);
           setIsLoading(false);
         }
       })
@@ -58,6 +60,7 @@ export const ExplorePage: React.FC = () => {
 
   const handleToggleFavorite = async (place: Place) => {
     const isFav = favoriteIds.has(place.id);
+
     const nextSet = new Set(favoriteIds);
 
     if (isFav) {
@@ -116,6 +119,30 @@ export const ExplorePage: React.FC = () => {
 
       {/* Discovery Section */}
       <section className="space-y-6">
+        {/* Spelling Verification & Auto-Correction Notice */}
+        {spellingCorrection && (
+          <div className="p-4 rounded-xl border-[2.5px] border-[#171717] bg-[#FFE600]/30 shadow-[3px_3px_0_#171717] flex flex-col sm:flex-row sm:items-center justify-between gap-3 text-sm font-bold text-[#171717]">
+            <div className="flex items-center gap-2.5">
+              <span className="p-1 rounded bg-[#FFE600] border border-[#171717] shrink-0">
+                <Sparkles size={16} className="text-[#171717]" />
+              </span>
+              <span>
+                Showing results for <strong className="text-base uppercase underline decoration-2">{spellingCorrection.correctedQuery}</strong>
+                <span className="text-xs text-gray-700 font-semibold ml-2">
+                  (auto-corrected from <em>"{spellingCorrection.originalQuery}"</em>)
+                </span>
+              </span>
+            </div>
+            <button
+              type="button"
+              onClick={() => setSpellingCorrection(null)}
+              className="text-xs font-black uppercase text-gray-600 hover:text-black underline cursor-pointer self-end sm:self-auto"
+            >
+              Dismiss
+            </button>
+          </div>
+        )}
+
         {/* Category filters & view switcher */}
         <CategoryFilter
           selectedCategory={category}
@@ -124,6 +151,7 @@ export const ExplorePage: React.FC = () => {
           viewMode={viewMode}
           onToggleViewMode={(mode) => setViewMode(mode)}
         />
+
 
         {/* Content View */}
         {isLoading ? (

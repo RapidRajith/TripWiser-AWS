@@ -37,6 +37,20 @@ export interface PlaceSearchParams {
   sortBy?: 'relevance' | 'distance';
 }
 
+export interface SpellingCorrection {
+  isCorrected: boolean;
+  originalQuery: string;
+  correctedQuery: string;
+  confidence: number;
+}
+
+export interface PlaceSearchResult {
+  places: Place[];
+  attribution: string;
+  correction?: SpellingCorrection;
+}
+
+
 export interface WeatherCondition {
   label: string;
   icon: string;
