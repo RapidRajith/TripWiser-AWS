@@ -27,22 +27,37 @@
 - **Weather-Aware Travel Hints:** Automatically detects rainfall probabilities (>40%) and advises travellers to pack an umbrella or pivot to indoor museums and cafes.
 - **External Map Directions:** Direct integration with Google Maps route directions.
 
-### 3. Comprehensive Itinerary Management
+### 3. Comprehensive Itinerary Management & Transit Intelligence
 - **Day-Wise Planning:** Structure visits across multiple days (Day 1, Day 2, Day 3, etc.).
+- **Smart Stop-to-Stop Transit Connectors:** Computes exact geographic distance (Haversine formula), estimated driving duration, walking time, and gives a 1-click Google Maps route link between consecutive stops on each day!
 - **Accessible Stop Reordering:** Move stops up or down with keyboard-accessible controls and persistent sequence order.
 - **Personal Notes & Tips:** Attach customized notes and timing hints to individual stops.
 - **Budget Estimator:** Enter estimated expenses per stop to compute automatic day-wise and total trip expenditure.
 - **Delete & Confirm:** Safe stop removal with clear visual feedback.
 
-### 4. Saved Favorites & Bookmarking
+### 4. Weather-Aware Smart Packing Assistant
+- Dynamically analyzes destination climate and itinerary duration.
+- Generates categorized checklist items (*Weather Essentials, Travel Documents, Tech Gear, Apparel*).
+- Interactive packing progress bar with real-time percentage indicators and custom item addition.
+
+### 5. Curated 1-Click Expeditions (Trip Templates)
+- Instant multi-day itineraries for top destinations (e.g., Chennai Heritage Trail, Paris Art & Cafes).
+- Clone complete day-by-day itineraries with pre-filled costs, coordinates, and notes in one click.
+
+### 6. Multi-Format Itinerary Export (CSV, JSON & Print)
+- One-click **CSV export** for spreadsheet planning.
+- Full **JSON dossier export** for backup and data portability.
+- Styled, print-friendly browser print layout.
+
+### 7. Saved Favorites & Bookmarking
 - Bookmark places with one-click heart controls.
 - Dedicated `/favorites` page with direct "Add to Itinerary" shortcuts.
 
-### 5. Multi-Layer Persistence (Supabase + Resilient Local Fallback)
+### 8. Multi-Layer Persistence (Supabase + Resilient Local Fallback)
 - **Supabase PostgreSQL & Auth:** Full-stack migration script with **Row Level Security (RLS)** ensuring users only access their own records.
 - **Resilient Offline/Preview Fallback:** Automatically operates seamlessly out of the box with zero runtime breakages even before cloud keys are configured.
 
-### 6. Design System: Editorial Neo-Brutalism
+### 9. Design System: Editorial Neo-Brutalism
 - **Tokens:** High-contrast palette (`#171717` Ink, `#FFFDF5` Paper, `#D8FF3E` Electric Lime, `#76D7FF` Sky Blue, `#FF6B5E` Hot Coral, `#FFE600` Lemon).
 - **Tactile Depth:** 2.5px solid black borders, hard offset drop shadows (`4px 4px 0 #171717`), press animations (`active:translate-x-1 active:translate-y-1`).
 - **Typography:** `Space Grotesk` (bold editorial titles) paired with `Plus Jakarta Sans` (legible body).
